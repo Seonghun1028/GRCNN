@@ -1,0 +1,6 @@
+devel_space: /home/csh/csh_ws/src/grcnn/devel
+install: false
+install_space: /home/csh/csh_ws/src/grcnn/install
+profile: default
+source_space: /home/csh/csh_ws/src/grcnn/src
+workspace: /home/csh/csh_ws/src/grcnn
