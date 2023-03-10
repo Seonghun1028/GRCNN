@@ -1,11 +1,5 @@
 #! /usr/bin/env python
 
-##### import os         #####
-##### import argparse   #####
-##### import logging    #####
-##### import tf         #####
-
-import time
 import rospy
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,7 +31,7 @@ class GRCNNService:
         rospy.Service('/predict', GraspPrediction, self.compute_service_handler) 
 
 
-    def compute_service_handler(self, req):
+    def compute_service_handler(self,req):
         try:
 
             fig = plt.figure(figsize=(10, 10))
@@ -81,12 +75,10 @@ class GRCNNService:
         #     grasp_width_img=width_img
         # )
 
-        time.sleep(3)
-
         grasps , grasp_point = detect_grasps(q_img, ang_img, width_img) #파지점 추출                        ######### grasp_point 추가 #########
 
         # pos_z = depth[grasps[0].center[0] + self.cam_data.top_left[0], grasps[0].center[1] + self.cam_data.top_left[1]] * self.cam_depth_scale
-        pos_z = raw_depth[grasps[0].center[0] + self.cam_data.top_left[0], grasps[0].center[1] + self.cam_data.top_left[1]] * self.cam_depth_scale  ###### 수정 #####
+        pos_z = raw_depth[grasps[0].center[0] + self.cam_data.top_left[0], grasps[0].center[1] + self.cam_data.top_left[1]] * self.cam_depth_scale - 0.015 ###### 수정 #####
         pos_x = np.multiply(grasps[0].center[1] + self.cam_data.top_left[1] - self.camera.intrinsics.ppx,
                             pos_z / self.camera.intrinsics.fx)
         pos_y = np.multiply(grasps[0].center[0] + self.cam_data.top_left[0] - self.camera.intrinsics.ppy,
@@ -101,18 +93,26 @@ class GRCNNService:
         print('Camera to target: ', target)
 
         # Convert camera to robot coordinates
-        target_position = [(0.30713270+0.045)-pos_y, (0.03)-pos_x,(0.58663631+0.06)-pos_z]
+        target_position = [(0.30713270+0.045)-pos_y, (0+0.03)-pos_x,(0.78+0.0415)-pos_z] #(base to eef + eef to camera)
         print('Base to target: ', target_position)
 
         # Convert camera to robot angle
+        angle = [0, 0, grasps[0].angle]
         print('Grasp angle: ', grasps[0].angle)
 
-        target_angle = [pi, 0, pi/4+grasps[0].angle]
+        if angle[2] >= 0:
+            alpha = angle[2] - pi/2
+        else:
+            alpha = angle[2] + pi/2
+        
+        a = pi/4 + alpha
+
+        target_angle = [pi, 0, a]
         print('Orientation in Euler: ', target_angle)
 
-        ret = GraspPredictionResponse() # bool sussess 
+        ret = GraspPredictionResponse() # bool success 
         ret.success = True
-        g = ret.best_grasp # 
+        g = ret.best_grasp 
 
         g.position.x = target_position[0]
         g.position.y = target_position[1]
